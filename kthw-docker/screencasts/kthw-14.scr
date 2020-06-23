@@ -1,0 +1,69 @@
+.TS # KTHW 14 Cleaning Up
+.TS 
+.TS ![](../images/kthw-14.gif)
+.TS
+.TS View the [screencast file](../screencasts/kthw-14.scr)
+.TS
+.TS ```
+.MD >  **Kubernetes the Hard Way using My Own Kind**
+.MD > 
+.MD > View a [screencast and transcript](kthw-14-transcript.md)
+screencast delay 18
+screencast clear
+screencast paste
+# ---------------------------------------------------------
+screencast paste
+# Kubernetes the Hard Way - using `mokctl` from My Own Kind
+screencast paste
+# ---------------------------------------------------------
+screencast paste
+# 14-cleanup.md
+screencast paste
+# Cleaning Up
+screencast prompt %$#>
+
+.MD # Cleaning Up
+.MD 
+.MD In this lab you will delete the compute resources created during this tutorial.
+.MD 
+.MD ## Compute Instances
+.MD 
+.MD Delete the load balancer, controller and worker compute instances:
+.MD 
+.MD ```
+# Delete the cluster:
+mokctl delete cluster kthw
+y
+.MD ```
+.MD
+.MD Delete the docker container we started to keep your laptop clean:
+.MD
+.MD ```
+# Delete the docker container:
+docker stop kthw
+docker rm kthw
+.MD ```
+.MD
+.MD Delete the directory containing all the certificates:
+.MD
+.MD ```
+# Delete the certs directory:
+rm -rf kthw-certs
+.MD ```
+.MD 
+.MD ## Networking
+.MD 
+.MD Delete the host routing rules:
+.MD 
+.MD ```
+# Delete the pod network routes:
+ip ro | grep 10.200 | xargs -d'\n' -n1 sudo bash -c eval ip ro del
+.MD ```
+.MD 
+
+# All done :)
+
+# ---------------------------------------
+# You made it!! All finished - well done!
+# ---------------------------------------
+.TS ```

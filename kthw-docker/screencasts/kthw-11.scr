@@ -1,0 +1,107 @@
+.TS # KTHW 11 Provisioning Pod Network Routes
+.TS 
+.TS ![](../images/kthw-11.gif)
+.TS
+.TS View the [screencast file](../screencasts/kthw-11.scr)
+.TS
+.TS ```
+.MD >  **Kubernetes the Hard Way using My Own Kind**
+.MD > 
+.MD > View a [screencast and transcript](kthw-11-transcript.md)
+screencast delay 18
+screencast clear
+screencast paste
+# ---------------------------------------------------------
+screencast paste
+# Kubernetes the Hard Way - using `mokctl` from My Own Kind
+screencast paste
+# ---------------------------------------------------------
+screencast paste
+# 11-pod-network-routes.md
+screencast paste
+# Provisioning Pod Network Routes
+screencast prompt %$#
+
+# Commands here should be run on the host - your laptop.
+# Don't 'log in' to any containers.
+
+.MD # Provisioning Pod Network Routes
+.MD 
+.MD Pods scheduled to a node receive an IP address from the node's Pod CIDR range. At this point pods can not communicate with other pods running on different nodes due to missing network routes to internal subnets on other worker nodes.
+.MD 
+.MD In this lab you will create a route on the host for each worker node that maps the node's Pod CIDR range to the node's internal IP address.
+.MD 
+.MD > There are [other ways](https://kubernetes.io/docs/concepts/cluster-administration/networking/#how-to-achieve-this) to implement the Kubernetes networking model.
+.MD 
+.MD ## The Routing Table
+.MD 
+.MD In this section you will gather the information required to create routes in the host's networking stack on your laptop.
+.MD 
+.MD Print and save variables for the internal IP addresses for each worker instance:
+.MD 
+.MD ```
+screencast sleep 1
+# Set worker IP variables
+screencast sleep 1
+screencast paste begin
+{
+WORKER1=$(docker inspect kthw-worker-1 --format "{{.NetworkSettings.IPAddress}}")
+WORKER2=$(docker inspect kthw-worker-2 --format "{{.NetworkSettings.IPAddress}}")
+WORKER3=$(docker inspect kthw-worker-3 --format "{{.NetworkSettings.IPAddress}}")
+echo $WORKER1
+echo $WORKER2
+echo $WORKER3
+}
+screencast paste end
+screencast sleep 3
+.MD ```
+.MD 
+.MD > output
+.MD 
+.MD ```
+.MD 10.88.1.43
+.MD 10.88.1.44
+.MD 10.88.1.45
+.MD ```
+.MD 
+.MD ## Routes
+.MD 
+.MD Create network routes for each worker instance:
+.MD 
+.MD ```
+# create the routes
+screencast sleep 1
+screencast paste begin
+{
+  sudo ip ro add 10.200.1.0/24 via $WORKER1
+  sudo ip ro add 10.200.2.0/24 via $WORKER2
+  sudo ip ro add 10.200.3.0/24 via $WORKER3
+}
+screencast paste end
+.MD ```
+.MD 
+.MD List the routes in the `kubernetes-the-hard-way` network:
+.MD 
+.MD ```
+# Check the routes:
+ip ro | grep 10.200
+# Looks good
+.MD ```
+.MD 
+.MD > output
+.MD 
+.MD ```
+.MD 10.200.1.0/24 via 10.88.1.43 dev cni-podman0 
+.MD 10.200.2.0/24 via 10.88.1.44 dev cni-podman0 
+.MD 10.200.3.0/24 via 10.88.1.45 dev cni-podman0 
+.MD ```
+.MD 
+
+# All done :)
+
+# --------------------------------------
+# Next: Deploying the DNS Cluster Add-on
+screencast paste
+# --------------------------------------
+.MD Next: [Deploying the DNS Cluster Add-on](kthw-12.md)
+.TS ```

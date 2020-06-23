@@ -1,0 +1,282 @@
+.TS # KTHW 07 Bootstrapping the etcd Cluster
+.TS 
+.TS ![](../images/kthw-7.gif)
+.TS
+.TS View the [screencast file](../screencasts/kthw-7.scr)
+.TS
+.TS ```
+.MD >  **Kubernetes the Hard Way using My Own Kind**
+.MD > 
+.MD > View a [screencast and transcript](kthw-7-transcript.md)
+screencast delay 10
+screencast clear
+screencast paste
+# ---------------------------------------------------------
+screencast paste
+# Kubernetes the Hard Way - using `mokctl` from My Own Kind
+screencast paste
+# ---------------------------------------------------------
+screencast paste
+# 07-bootstrapping-the-etcd-cluster
+screencast paste
+# Create the ETCD cluster on the master nodes.
+
+.MD 
+.MD # Bootstrapping the etcd Cluster
+.MD 
+.MD Kubernetes components are stateless and store cluster state in [etcd](https://github.com/etcd-io/etcd). In this lab you will bootstrap a three node etcd cluster and configure it for high availability and secure remote access.
+.MD 
+.MD ## Prerequisites
+.MD 
+.MD The commands in this lab must be run on each controller instance: `kthw-master-1`, `kthw-master-2`, and `kthw-master-3`. Login to each controller instance using the `mokctl` command. Example:
+.MD 
+.MD ```
+.MD mokctl exec kthw-master-1
+.MD ```
+.MD 
+.MD ### Running commands in parallel with tmux
+.MD 
+.MD [tmux](https://github.com/tmux/tmux/wiki) can be used to run commands on multiple compute instances at the same time. See the [Running commands in parallel with tmux](01-prerequisites.md#running-commands-in-parallel-with-tmux) section in the Prerequisites lab.
+.MD 
+.MD ## Bootstrapping an etcd Cluster Member
+.MD 
+.MD Before logging in to the masters we need to copy the cluster-list to each master node:
+.MD
+.MD ```
+# The cluster list needs to be copied over to get the IPs of all the nodes
+# Copy to the masters
+screencast paste start
+for instance in kthw-master-1 kthw-master-2 kthw-master-3; do
+  sudo docker cp kthw-certs/cluster-list.txt ${instance}:/root/
+done
+screencast paste end
+.MD ```
+
+screencast prompt %$#
+screencast delay 4
+# We will use 'tmux' to log in to three containers and then
+# execute the commands in parallel.
+screencast delay 18
+
+.MD
+.MD Use `tmux` to log in to all three masters at the same time:
+.MD
+.MD ```
+screencast subshell
+tmux
+tmux set status off
+screencast prompt %$#
+tmux split
+tmux split
+tmux select-layout even-vertical
+^aj
+screencast sleep 1
+mokctl exec kthw-master-1
+screencast sleep 1
+^aj
+screencast sleep 1
+mokctl exec kthw-master-2
+screencast sleep 1
+^aj
+screencast sleep 1
+mokctl exec kthw-master-3
+# syncing screens
+screencast sleep 1
+^a^x
+screencast sleep 1
+# Panes are now synced!
+# Clearing the screen
+clear
+.MD ```
+.MD
+.MD `mokctl` installed a few kubernetes services ready for set up.
+.MD
+.MD Ensure all existing kubernetes services are deleted:
+.MD
+.MD ```
+# Remove the existing k8s services:
+screencast paste
+yum -y remove kubelet kubeadm cri-o cri-tools runc criu
+.MD ```
+.MD
+.MD Install `wget` using `yum`:
+.MD
+.MD ```
+# Install wget
+yum -y install wget
+# Download and Install the etcd Binaries
+.MD ```
+.MD
+.MD ### Download and Install the etcd Binaries
+.MD
+.MD Change directory to the HOME directory:
+.MD
+.MD ```
+cd
+.MD ```
+.MD
+.MD Download the official etcd release binaries from the [etcd](https://github.com/etcd-io/etcd) GitHub project:
+.MD
+.MD ```
+screencast waitforsilence
+screencast paste
+wget "https://github.com/etcd-io/etcd/releases/download/v3.4.0/etcd-v3.4.0-linux-amd64.tar.gz"
+.MD ```
+.MD
+.MD Extract and install the `etcd` server and the `etcdctl` command line utility:
+.MD
+.MD ```
+# Extract and install
+screencast paste start
+{
+  tar -xvf etcd-v3.4.0-linux-amd64.tar.gz 2>/dev/null
+  mv etcd-v3.4.0-linux-amd64/etcd* /usr/local/bin/
+}
+screencast paste end
+.MD ```
+screencast sleep 2
+screencast prompt %$#
+
+.MD ### Configure the etcd Server
+.MD 
+.MD ```
+# Configure the etcd server
+screencast paste start
+{
+  mkdir -p /etc/etcd /var/lib/etcd
+  cp ca.pem kubernetes-key.pem kubernetes.pem /etc/etcd/
+}
+screencast paste end
+.MD ```
+.MD
+screencast sleep 2
+
+.MD The instance internal IP address will be used to serve client requests and communicate with etcd cluster peers. Retrieve the internal IP address for the current compute instance:
+.MD
+.MD
+.MD ```
+# Get the 'instance internal IP address', which for us is the host's IP address
+screencast paste
+INTERNAL_IP=$(ip ro get default 8.8.8.8 | head -n 1 | cut -f 7 -d " ")
+echo $INTERNAL_IP
+.MD ```
+.MD
+.MD Also set some variables for all of the master nodes:
+.MD
+.MD ```
+screencast paste
+IP_MASTER_1=$(grep kthw-master-1 /root/cluster-list.txt | awk '{ print $NF; }')
+echo $IP_MASTER_1
+screencast paste
+IP_MASTER_2=$(grep kthw-master-2 /root/cluster-list.txt | awk '{ print $NF; }')
+echo $IP_MASTER_2
+screencast paste
+IP_MASTER_3=$(grep kthw-master-3 /root/cluster-list.txt | awk '{ print $NF; }')
+echo $IP_MASTER_3
+.MD ```
+.MD
+.MD Each etcd member must have a unique name within an etcd cluster. Set the etcd name to match the hostname of the current compute instance:
+.MD
+.MD ```
+screencast paste
+ETCD_NAME=$(hostname -s)
+.MD ```
+.MD
+.MD Create the `etcd.service` systemd unit file:
+.MD
+.MD ```
+# Write the etcd systemd unit file
+screencast paste start
+cat <<EOF | tee /etc/systemd/system/etcd.service
+[Unit]
+Description=etcd
+Documentation=https://github.com/coreos
+
+[Service]
+Type=notify
+ExecStart=/usr/local/bin/etcd \\
+  --name ${ETCD_NAME} \\
+  --cert-file=/etc/etcd/kubernetes.pem \\
+  --key-file=/etc/etcd/kubernetes-key.pem \\
+  --peer-cert-file=/etc/etcd/kubernetes.pem \\
+  --peer-key-file=/etc/etcd/kubernetes-key.pem \\
+  --trusted-ca-file=/etc/etcd/ca.pem \\
+  --peer-trusted-ca-file=/etc/etcd/ca.pem \\
+  --peer-client-cert-auth \\
+  --client-cert-auth \\
+  --initial-advertise-peer-urls https://${INTERNAL_IP}:2380 \\
+  --listen-peer-urls https://${INTERNAL_IP}:2380 \\
+  --listen-client-urls https://${INTERNAL_IP}:2379,https://127.0.0.1:2379 \\
+  --advertise-client-urls https://${INTERNAL_IP}:2379 \\
+  --initial-cluster-token etcd-cluster-0 \\
+  --initial-cluster kthw-master-1=https://$IP_MASTER_1:2380,kthw-master-2=https://$IP_MASTER_2:2380,kthw-master-3=https://$IP_MASTER_3:2380 \\
+  --initial-cluster-state new \\
+  --data-dir=/var/lib/etcd
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+screencast paste end
+.MD ```
+.MD
+screencast sleep 2
+
+.MD ### Start the etcd Server
+.MD 
+.MD ```
+# Start the etcd Server
+screencast paste start
+{
+  systemctl daemon-reload
+  systemctl enable etcd
+  systemctl start etcd
+}
+screencast paste end
+.MD ```
+.MD
+screencast sleep 2
+
+.MD ## Verification
+.MD 
+.MD List the etcd cluster members:
+.MD 
+.MD ```
+# Verification
+screencast paste start
+ETCDCTL_API=3 etcdctl member list \
+  --endpoints=https://127.0.0.1:2379 \
+  --cacert=/etc/etcd/ca.pem \
+  --cert=/etc/etcd/kubernetes.pem \
+  --key=/etc/etcd/kubernetes-key.pem
+screencast paste end
+.MD ```
+.MD
+.MD > output
+.MD 
+.MD ```
+.MD 3a57933972cb5131, started, kthw-master-3, https://10.88.1.22:2380, https://10.88.1.22:2379
+.MD f98dc20bce6225a0, started, kthw-master-1, https://10.88.1.20:2380, https://10.88.1.20:2379
+.MD ffed16798470cab5, started, kthw-master-2, https://10.88.1.21:2380, https://10.88.1.21:2379
+.MD ```
+screencast sleep 2
+# It works!
+# Log out of the masters
+.MD
+.MD Log out of the master nodes:
+.MD
+.MD ```
+exit
+exit
+.MD ```
+.MD
+# All done :)
+
+screencast paste
+# ------------------------------------------------
+# Next: Bootstrapping the Kubernetes Control Plane
+screencast paste
+# ------------------------------------------------
+.MD Next: [Bootstrapping the Kubernetes Control Plane](kthw-8.md)
+.TS ```
