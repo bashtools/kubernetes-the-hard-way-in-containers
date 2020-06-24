@@ -26,6 +26,13 @@ while true; do screen -r -e ^Oo screencast; sleep .5; done
 In the first teminal, start the screencast recording. It will take about 50 mins.
 
 ```none
+# Install cmdline-player
+sudo npm i -g command-line-player
+
+# Click the window to record after entering the next command
+wname=$(cmdline-player -q)
+
+# Start recording
 for i in {2..14}; do cmdline-player -w "$wname" -c kthw/kthw-$i.md screencasts/kthw-$i.scr <<<"\n"; sleep 1; done
 ```
 
