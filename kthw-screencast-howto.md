@@ -26,7 +26,7 @@ while true; do screen -r -e ^Oo screencast; sleep .5; done
 In the first teminal, start the screencast recording. It will take about 50 mins.
 
 ```none
-# Click the window to record after entering the next command
+# After running the next command you need to click the window to be recorded
 wname=$(cmdline-player -q)
 
 # Start recording
