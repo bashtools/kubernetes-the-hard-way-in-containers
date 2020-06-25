@@ -10,7 +10,7 @@ git clone git@github.com:my-own-kind/kubernetes-the-hard-way-in-containers.git
 cd kubernetes-the-hard-way-in-containers/kthw-docker
 
 # Install the cmdline-player command:
-sudo npm -i command-line-player
+sudo npm i -g command-line-player
 ```
 
 Open another terminal window and make it large and white.
@@ -26,9 +26,6 @@ while true; do screen -r -e ^Oo screencast; sleep .5; done
 In the first teminal, start the screencast recording. It will take about 50 mins.
 
 ```none
-# Install cmdline-player
-sudo npm i -g command-line-player
-
 # Click the window to record after entering the next command
 wname=$(cmdline-player -q)
 
