@@ -12,7 +12,7 @@
 
 * Screencasts included.
   
-  You can watch the screencast videos. There are two formats: Animated GIFs, showable on github pages, and WebM format where you can pause, rewind, fast-forward.
+  You can just watch the screencast videos or use them when you're having problems.
 
 * Verified labs.
   
