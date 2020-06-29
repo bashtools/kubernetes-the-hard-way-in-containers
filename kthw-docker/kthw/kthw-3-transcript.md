@@ -2,7 +2,7 @@
 
 ![](../images/kthw-3.gif)
 
-View the [screencast file](../screencasts/kthw-3.scr))
+View the [screencast file](../screencasts/kthw-3.scr)
 
 ```
 # ---------------------------------------------------------
